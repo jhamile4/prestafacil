@@ -2,22 +2,58 @@
 
 Sistema de gestión de préstamos personales para cajas y financieras pequeñas. Cubre el ciclo completo del crédito: registro del cliente, evaluación de capacidad de pago, aprobación, desembolso, cronograma de cuotas (sistema francés), pagos, mora y reportes.
 
-> 🚧 **En desarrollo.** Fase actual: diseño de base de datos (terminada).
+> 🚧 **En desarrollo.** Terminado: base de datos y módulo de clientes. Siguiente: préstamos.
 
 ## Stack
 
 | Capa | Tecnología |
 |---|---|
 | Base de datos | SQL Server, procedimientos almacenados |
-| Backend | ASP.NET Core Web API (.NET), C#, Entity Framework Core *(próximamente)* |
+| Backend | ASP.NET Core Web API (.NET 10), C#, Entity Framework Core, ADO.NET, FluentValidation |
 | Seguridad | JWT, roles (ADMIN, ASESOR, CAJERO), BCrypt *(próximamente)* |
-| Calidad | xUnit, Swagger, Docker, GitHub Actions *(próximamente)* |
+| Calidad | xUnit, Swagger/OpenAPI, ProblemDetails · Docker y GitHub Actions *(próximamente)* |
 | Frontend | React *(próximamente)* |
 
 ## Documentación
 
 - [Requerimientos y reglas de negocio](docs/01_requerimientos.md)
 - [Modelo de datos y decisiones de diseño](docs/02_modelo_datos.md)
+
+## Arquitectura
+
+Arquitectura en capas: cada capa solo conoce a la de adentro.
+
+```
+src/
+├── PrestaFacil.Domain          Entidades y reglas de negocio (sin dependencias)
+├── PrestaFacil.Application     Casos de uso, DTOs, validaciones, interfaces
+├── PrestaFacil.Infrastructure  EF Core, repositorios, llamadas a procedimientos
+└── PrestaFacil.Api             Controladores, manejo de errores, Swagger
+tests/
+└── PrestaFacil.UnitTests       Pruebas xUnit de dominio y servicios
+```
+
+```mermaid
+graph LR
+    Api --> Application
+    Api --> Infrastructure
+    Infrastructure --> Application
+    Application --> Domain
+```
+
+## Endpoints disponibles
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/clientes?buscar=&soloActivos=&pagina=&tamanoPagina=` | Búsqueda por DNI o nombre (sin importar tildes) |
+| GET | `/api/clientes/{id}` | Detalle del cliente |
+| GET | `/api/clientes/dni/{dni}` | Buscar por DNI |
+| POST | `/api/clientes` | Registrar cliente |
+| PUT | `/api/clientes/{id}` | Actualizar cliente |
+| PATCH | `/api/clientes/{id}/desactivar` · `/activar` | Desactivar o reactivar (no se borra) |
+| GET | `/api/clientes/{id}/estado-cuenta` | Préstamos, cuotas por pagar y deuda total (`sp_EstadoCuentaCliente`) |
+
+Los errores siguen el estándar **ProblemDetails**: `400` para datos inválidos (con el detalle por campo), `404` si no existe, `409` para un DNI duplicado y `422` cuando no se cumple una regla de negocio.
 
 ## Crear la base de datos
 
@@ -41,15 +77,31 @@ EXEC sp_ReporteMorosos;
 EXEC sp_EstadoCuentaCliente @ClienteId = 1;
 ```
 
+## Ejecutar la API
+
+Requisito: .NET 10 SDK. La cadena de conexión está en `src/PrestaFacil.Api/appsettings.Development.json` (usa `.\SQLEXPRESS` con autenticación de Windows).
+
+```bash
+dotnet run --project src/PrestaFacil.Api --launch-profile http
+```
+
+Abre http://localhost:5039/swagger. En Visual Studio, abre `PrestaFacil.slnx` y presiona F5.
+
+## Pruebas
+
+```bash
+dotnet test
+```
+
 ## Hoja de ruta
 
 - [x] Requerimientos y reglas de negocio
 - [x] Modelo de datos, procedimientos almacenados y datos de prueba
-- [ ] API base en capas y módulo de clientes
+- [x] API base en capas y módulo de clientes
 - [ ] Préstamos: simulador, evaluación, cronograma
 - [ ] Pagos y mora
 - [ ] Autenticación JWT y roles
-- [ ] Pruebas unitarias, Docker y CI
+- [ ] Docker y CI (las pruebas unitarias se agregan en cada módulo)
 - [ ] Frontend en React y despliegue
 
 ## Autora

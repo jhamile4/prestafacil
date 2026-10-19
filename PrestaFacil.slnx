@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PrestaFacil.Api/PrestaFacil.Api.csproj" />
+    <Project Path="src/PrestaFacil.Application/PrestaFacil.Application.csproj" />
+    <Project Path="src/PrestaFacil.Domain/PrestaFacil.Domain.csproj" />
+    <Project Path="src/PrestaFacil.Infrastructure/PrestaFacil.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PrestaFacil.UnitTests/PrestaFacil.UnitTests.csproj" />
+  </Folder>
+</Solution>
