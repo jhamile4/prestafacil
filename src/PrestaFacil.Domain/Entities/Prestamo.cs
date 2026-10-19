@@ -7,6 +7,7 @@ public class Prestamo
 {
     private readonly List<Cuota> _cuotas = [];
     private readonly List<HistorialEstadoPrestamo> _historial = [];
+    private readonly List<Pago> _pagos = [];
 
     public int Id { get; private set; }
     /// <summary>PR-000001. Lo calcula SQL Server a partir del Id.</summary>
@@ -32,6 +33,10 @@ public class Prestamo
 
     public IReadOnlyList<Cuota> Cuotas => _cuotas;
     public IReadOnlyList<HistorialEstadoPrestamo> Historial => _historial;
+    public IReadOnlyList<Pago> Pagos => _pagos;
+
+    /// <summary>Lo que falta pagar, incluida la mora ya calculada.</summary>
+    public decimal DeudaPendiente => _cuotas.Sum(c => c.Pendiente);
 
     private Prestamo() { }
 
@@ -129,6 +134,103 @@ public class Prestamo
         DesembolsadoPorId = cajeroId;
         FechaDesembolso = fechaDesembolso;
         CambiarEstado(EstadoPrestamo.Desembolsado, cajeroId, ahora, $"Desembolso de S/ {Monto:N2}");
+    }
+
+    /// <summary>RF-14 / RN-08: calcula la mora de las cuotas vencidas a la fecha de corte.</summary>
+    public void ActualizarMora(DateOnly fechaCorte)
+    {
+        if (Estado != EstadoPrestamo.Desembolsado) return;
+        foreach (var cuota in _cuotas)
+            cuota.ActualizarMora(fechaCorte, TasaMoraDiaria);
+    }
+
+    /// <summary>Situación de la deuda a una fecha. Actualiza la mora en memoria.</summary>
+    public ResumenDeuda CalcularDeuda(DateOnly fechaCorte)
+    {
+        ActualizarMora(fechaCorte);
+
+        var vencidas = _cuotas.Where(c => c.Estado == EstadoCuota.Vencida).ToList();
+        var proxima = _cuotas
+            .Where(c => c.Pendiente > 0 && c.FechaVencimiento >= fechaCorte)
+            .MinBy(c => c.NumeroCuota);
+
+        return new ResumenDeuda(
+            fechaCorte,
+            vencidas.Count,
+            vencidas.Count == 0 ? 0 : vencidas.Max(c => c.DiasAtraso(fechaCorte)),
+            vencidas.Sum(c => c.SaldoVencible),
+            _cuotas.Sum(c => c.MoraPendiente),
+            vencidas.Sum(c => c.Pendiente),
+            DeudaPendiente,
+            proxima);
+    }
+
+    /// <summary>
+    /// RF-12 y RF-13: registra el pago y lo aplica desde la cuota más antigua (RN-09).
+    /// Antes calcula la mora a la fecha para cobrarla completa.
+    /// </summary>
+    public Pago RegistrarPago(decimal monto, MedioPago medioPago, string? numeroOperacion, int cajeroId, DateTime ahora)
+    {
+        ExigirEstado(EstadoPrestamo.Desembolsado, "registrar pagos en");
+        var hoy = DateOnly.FromDateTime(ahora);
+        ActualizarMora(hoy);
+
+        // RN-10
+        var deuda = DeudaPendiente;
+        if (monto > deuda)
+            throw new DomainException(
+                $"El pago de S/ {monto:N2} supera la deuda total del préstamo {Codigo}: S/ {deuda:N2} (RN-10).");
+
+        var pago = new Pago(monto, medioPago, numeroOperacion, cajeroId, ahora);
+        var restante = monto;
+        foreach (var cuota in _cuotas.Where(c => c.Pendiente > 0).OrderBy(c => c.NumeroCuota))
+        {
+            if (restante == 0) break;
+            var aplicado = cuota.Aplicar(restante, hoy);
+            pago.AgregarDetalle(cuota, aplicado.Mora, aplicado.Interes, aplicado.Capital);
+            restante -= aplicado.Total;
+        }
+        _pagos.Add(pago);
+
+        // RF-15
+        if (_cuotas.All(c => c.Estado == EstadoCuota.Pagada))
+            CambiarEstado(EstadoPrestamo.Pagado, cajeroId, ahora, "Se pagaron todas las cuotas");
+
+        return pago;
+    }
+
+    /// <summary>
+    /// RN-11: el pago no se borra, se anula y se revierten sus abonos. Solo se
+    /// puede anular el último pago válido, porque los posteriores se aplicaron
+    /// asumiendo que este existía.
+    /// </summary>
+    public Pago AnularPago(int pagoId, int adminId, string motivo, DateTime ahora)
+    {
+        if (Estado is not (EstadoPrestamo.Desembolsado or EstadoPrestamo.Pagado))
+            throw new DomainException($"El préstamo {Codigo} no tiene pagos que anular.");
+        if (string.IsNullOrWhiteSpace(motivo))
+            throw new DomainException("Debe indicar el motivo de la anulación.");
+
+        var pago = _pagos.FirstOrDefault(p => p.Id == pagoId)
+            ?? throw new DomainException($"El pago {pagoId} no pertenece al préstamo {Codigo}.");
+        if (pago.Anulado)
+            throw new DomainException($"El pago {pagoId} ya está anulado.");
+
+        var ultimo = _pagos.Where(p => !p.Anulado).OrderBy(p => p.FechaPago).ThenBy(p => p.Id).Last();
+        if (ultimo != pago)
+            throw new DomainException(
+                $"Solo se puede anular el último pago válido del préstamo (el {ultimo.Id}). Anule primero los posteriores.");
+
+        var hoy = DateOnly.FromDateTime(ahora);
+        foreach (var detalle in pago.Detalles)
+            detalle.Cuota.Revertir(detalle, hoy);
+        pago.Anular(adminId, motivo.Trim(), ahora);
+
+        if (Estado == EstadoPrestamo.Pagado)
+            CambiarEstado(EstadoPrestamo.Desembolsado, adminId, ahora, $"Anulación del pago {pago.Id}: {motivo.Trim()}");
+
+        ActualizarMora(hoy);
+        return pago;
     }
 
     private void ExigirEstado(EstadoPrestamo esperado, string accion)

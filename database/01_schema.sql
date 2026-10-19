@@ -162,6 +162,9 @@ CREATE TABLE Cuotas (
     Pendiente         AS (Capital + Interes + Mora - CapitalPagado - InteresPagado - MoraPagada) PERSISTED,
     Estado            VARCHAR(10)        NOT NULL CONSTRAINT DF_Cuotas_Estado DEFAULT ('PENDIENTE'),
     FechaPagoTotal    DATE               NULL,
+    -- Control de concurrencia: si dos cajeros cobran la misma cuota a la vez,
+    -- el segundo recibe un conflicto en lugar de aplicar el pago dos veces
+    RowVersion        ROWVERSION         NOT NULL,
 
     CONSTRAINT PK_Cuotas PRIMARY KEY (Id),
     CONSTRAINT FK_Cuotas_Prestamos FOREIGN KEY (PrestamoId) REFERENCES Prestamos (Id),

@@ -2,7 +2,7 @@
 
 Sistema de gestión de préstamos personales para cajas y financieras pequeñas. Cubre el ciclo completo del crédito: registro del cliente, evaluación de capacidad de pago, aprobación, desembolso, cronograma de cuotas (sistema francés), pagos, mora y reportes.
 
-> 🚧 **En desarrollo.** Terminado: base de datos, clientes y préstamos (simulador, evaluación, aprobación, desembolso y cronograma). Siguiente: pagos y mora.
+> 🚧 **En desarrollo.** Terminado: base de datos, clientes, préstamos, pagos, mora y reportes. Siguiente: autenticación JWT y roles.
 
 ## Stack
 
@@ -61,10 +61,18 @@ graph LR
 | POST | `/api/prestamos/{id}/aprobar` · `/rechazar` | Aprobar (vuelve a evaluar) o rechazar con motivo |
 | POST | `/api/prestamos/{id}/desembolsar` | Desembolsar y generar el cronograma |
 | GET | `/api/prestamos/{id}/cronograma` | Cronograma con lo pagado y lo pendiente |
+| GET | `/api/prestamos/{id}/deuda` | Deuda a hoy: cuotas vencidas, mora, total para ponerse al día y para cancelar |
+| GET | `/api/prestamos/{id}/pagos` | Pagos con su distribución por cuota |
+| POST | `/api/prestamos/{id}/pagos` | Cobrar: aplica a la cuota más antigua; mora → interés → capital |
+| POST | `/api/prestamos/{id}/pagos/{pagoId}/anular` | Anular el último pago y revertir sus abonos |
+| GET | `/api/reportes/cartera` | Cartera por estado (`sp_ReporteCartera`) |
+| GET | `/api/reportes/morosos?diasMinimos=` | Morosos (`sp_ReporteMorosos`) |
+| GET | `/api/reportes/cobranza?desde=&hasta=` | Cobranza por cajero y medio de pago (`sp_ReporteCobranza`) |
+| POST | `/api/mora/procesar` | Ejecutar ahora el proceso de mora (también corre solo cada 24 h) |
 
 > **Mientras no exista el login:** en desarrollo, la cabecera `X-Usuario-Id` (también disponible en Swagger) indica quién hace la operación: `1` admin, `2` asesor1, `3` asesor2, `4` cajero1. Por ejemplo, para aprobar se usa `1`. Se eliminará cuando se implemente JWT.
 
-Los errores siguen el estándar **ProblemDetails**: `400` para datos inválidos (con el detalle por campo), `404` si no existe, `409` para un DNI duplicado y `422` cuando no se cumple una regla de negocio.
+Los errores siguen el estándar **ProblemDetails**: `400` para datos inválidos (con el detalle por campo), `404` si no existe, `409` para un DNI duplicado o dos cobros simultáneos al mismo préstamo y `422` cuando no se cumple una regla de negocio.
 
 ## Crear la base de datos
 
@@ -110,7 +118,7 @@ dotnet test
 - [x] Modelo de datos, procedimientos almacenados y datos de prueba
 - [x] API base en capas y módulo de clientes
 - [x] Préstamos: simulador, evaluación, aprobación, desembolso y cronograma
-- [ ] Pagos y mora
+- [x] Pagos, mora (proceso diario en segundo plano), anulaciones y reportes
 - [ ] Autenticación JWT y roles
 - [ ] Docker y CI (las pruebas unitarias se agregan en cada módulo)
 - [ ] Frontend en React y despliegue

@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PrestaFacil.Application.Common;
 using PrestaFacil.Domain.Common;
 
@@ -28,6 +29,8 @@ public class GlobalExceptionHandler(
             },
             NotFoundException => Crear(StatusCodes.Status404NotFound, "Recurso no encontrado", exception.Message),
             ConflictException => Crear(StatusCodes.Status409Conflict, "Conflicto con datos existentes", exception.Message),
+            DbUpdateConcurrencyException => Crear(StatusCodes.Status409Conflict, "Conflicto de concurrencia",
+                "Otro usuario modificó este préstamo al mismo tiempo. Vuelva a consultar la deuda e intente de nuevo."),
             DomainException => Crear(StatusCodes.Status422UnprocessableEntity, "Regla de negocio no cumplida", exception.Message),
             _ => Crear(StatusCodes.Status500InternalServerError, "Error interno", "Ocurrió un error inesperado.")
         };

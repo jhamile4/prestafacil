@@ -16,4 +16,8 @@ internal static class EstadoConverters
     public static readonly ValueConverter<EstadoCuota, string> Cuota = new(
         v => v.ToString().ToUpperInvariant(),
         v => Enum.Parse<EstadoCuota>(v, true));
+
+    public static readonly ValueConverter<MedioPago, string> MedioDePago = new(
+        v => v.ToString().ToUpperInvariant(),
+        v => Enum.Parse<MedioPago>(v, true));
 }

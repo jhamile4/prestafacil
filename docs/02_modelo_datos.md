@@ -120,6 +120,7 @@ erDiagram
 | **La cuota guarda lo pagado por concepto** (`CapitalPagado`, `InteresPagado`, `MoraPagada`) | Permite pagos parciales y saber exactamente qué parte de la deuda se cubrió. |
 | **Tabla `PagoDetalles`** | Un pago puede cubrir varias cuotas. El detalle muestra cómo se distribuyó (RN-09) y permite anular el pago revirtiendo cada abono. |
 | **Columnas calculadas `PERSISTED`** (`Codigo`, `MontoCuota`, `Pendiente`) | El valor siempre es consistente y se puede indexar. |
+| **`Cuotas.RowVersion`** (concurrencia optimista) | Si dos cajeros cobran a la vez, SQL Server detecta que la cuota cambió desde que se leyó y el segundo pago se rechaza con 409 en lugar de aplicarse dos veces. |
 | **`CHECK` constraints** | La base de datos rechaza datos inválidos (DNI con letras, estados inexistentes, pagos mayores a la deuda de la cuota) aunque falle la validación de la API. |
 | **Sin borrado físico** (`Activo`, `Anulado`) | Trazabilidad para auditoría (RN-11). |
 | **Historial de estados** | Responde quién aprobó, rechazó o desembolsó cada préstamo y cuándo (RN-12). |
@@ -133,7 +134,8 @@ erDiagram
 | Cálculo de cuota y cronograma | API (C#) | Se prueba con xUnit y se reutiliza en el simulador (RF-07). |
 | Evaluación de la solicitud (RN-04 a RN-07) | API (C#) | Reglas de negocio que cambian con frecuencia; deben tener pruebas. |
 | Aplicación de pagos (RN-09) | API (C#), en una transacción | Lógica compleja que necesita pruebas; la transacción garantiza que todo se guarde o nada. |
-| Proceso diario de mora | `sp_ActualizarCuotasVencidas` | Actualiza muchas filas a la vez; en SQL es una sola sentencia. |
+| Proceso diario de mora | `sp_ActualizarCuotasVencidas`, que ejecuta un `BackgroundService` cada 24 h | Actualiza muchas filas a la vez; en SQL es una sola sentencia. |
+| Mora al momento de cobrar | API (C#), misma fórmula | El cajero necesita la mora exacta a la hora del pago. Una prueba verifica que C# y el procedimiento den el mismo resultado. |
 | Reportes | `sp_ReporteCartera`, `sp_ReporteMorosos`, `sp_ReporteCobranza`, `sp_EstadoCuentaCliente` | Agregaciones sobre muchos registros; la base de datos lo resuelve mejor. |
 | Integridad de datos | Constraints, `UNIQUE` y `FOREIGN KEY` | Última línea de defensa. |
 

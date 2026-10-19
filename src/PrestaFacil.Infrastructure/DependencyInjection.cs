@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PrestaFacil.Application.Clientes;
 using PrestaFacil.Application.Prestamos;
 using PrestaFacil.Application.Productos;
+using PrestaFacil.Application.Reportes;
 using PrestaFacil.Infrastructure.Persistence;
 using PrestaFacil.Infrastructure.Queries;
 using PrestaFacil.Infrastructure.Repositories;
@@ -23,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IEstadoCuentaQuery, EstadoCuentaQuery>();
         services.AddScoped<IPrestamoRepository, PrestamoRepository>();
         services.AddScoped<IProductoRepository, ProductoRepository>();
+        services.AddScoped<IReporteQueries, ReporteQueries>();
 
         return services;
     }

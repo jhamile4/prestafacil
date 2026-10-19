@@ -1,7 +1,9 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using PrestaFacil.Application.Clientes;
+using PrestaFacil.Application.Pagos;
 using PrestaFacil.Application.Prestamos;
+using PrestaFacil.Application.Reportes;
 using PrestaFacil.Application.Productos;
 
 namespace PrestaFacil.Application;
@@ -16,6 +18,8 @@ public static class DependencyInjection
         services.AddScoped<IClienteService, ClienteService>();
         services.AddScoped<IProductoService, ProductoService>();
         services.AddScoped<IPrestamoService, PrestamoService>();
+        services.AddScoped<IPagoService, PagoService>();
+        services.AddScoped<IReporteService, ReporteService>();
 
         return services;
     }

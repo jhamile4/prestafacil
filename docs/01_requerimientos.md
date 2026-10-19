@@ -101,10 +101,10 @@ Una caja o financiera pequeña otorga **préstamos personales en soles** a traba
 | **RN-06** | No se aprueba un préstamo si el cliente tiene **cuotas vencidas** en otro préstamo. Se revisa por fecha de vencimiento, sin esperar al proceso diario de mora. |
 | **RN-13** | Quien registró la solicitud no puede aprobarla (segregación de funciones). La evaluación se repite al aprobar, porque la situación del cliente puede haber cambiado. |
 | **RN-07** | Solo se evalúan clientes activos. |
-| **RN-08** | **Mora:** por cada día de atraso se cobra `saldo vencido (capital + interés) × tasa de mora diaria`. La mora se recalcula cada día hasta que la cuota se paga. |
+| **RN-08** | **Mora:** por cada día de atraso se cobra `saldo vencido (capital + interés) × tasa de mora diaria`. La mora se recalcula cada día hasta que la cuota se paga y nunca baja de lo que el cliente ya pagó por ese concepto. Al cobrar, se calcula a la fecha del pago. |
 | **RN-09** | **Orden de aplicación del pago:** primero la cuota más antigua y, dentro de cada cuota, primero la mora, luego el interés y al final el capital. |
 | **RN-10** | No se acepta un pago mayor a la deuda total pendiente del préstamo. |
-| **RN-11** | Los registros no se borran: clientes y usuarios se desactivan, y los pagos solo se pueden **anular** (con motivo) por un ADMIN. |
+| **RN-11** | Los registros no se borran: clientes y usuarios se desactivan, y los pagos solo se pueden **anular** (con motivo) por un ADMIN. Solo se anula el **último pago válido**, porque los posteriores se aplicaron asumiendo que ese existía. |
 | **RN-12** | Todo cambio de estado de un préstamo queda en el historial con usuario, fecha y comentario. |
 
 ### 4.1 Cálculo de la cuota (sistema francés, cuota fija)
@@ -148,7 +148,7 @@ Estados de la **cuota**: `PENDIENTE` → `PARCIAL` (pago incompleto) → `PAGADA
 | ID | Tipo | Requerimiento |
 |---|---|---|
 | RNF-01 | Seguridad | Contraseñas guardadas con hash (BCrypt), autenticación JWT y autorización por roles. |
-| RNF-02 | Integridad | Montos con `DECIMAL`, nunca con `FLOAT`. El registro de un pago es una transacción: o se guarda todo o nada. |
+| RNF-02 | Integridad | Montos con `DECIMAL`, nunca con `FLOAT`. El registro de un pago es una transacción: o se guarda todo o nada. Si dos cajeros cobran el mismo préstamo a la vez, el segundo recibe un conflicto (control de concurrencia con `ROWVERSION`). |
 | RNF-03 | Arquitectura | API REST en capas (Domain, Application, Infrastructure, API). |
 | RNF-04 | Calidad | Pruebas unitarias con xUnit para el cálculo de cuotas, la evaluación y la aplicación de pagos. |
 | RNF-05 | Documentación | Endpoints documentados con Swagger/OpenAPI. |

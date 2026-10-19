@@ -36,6 +36,9 @@ public class PrestamoConfiguration : IEntityTypeConfiguration<Prestamo>
 
         builder.HasMany(p => p.Historial).WithOne().HasForeignKey(h => h.PrestamoId);
         builder.Navigation(p => p.Historial).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(p => p.Pagos).WithOne().HasForeignKey(pg => pg.PrestamoId);
+        builder.Navigation(p => p.Pagos).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
 
@@ -55,6 +58,9 @@ public class CuotaConfiguration : IEntityTypeConfiguration<Cuota>
         builder.Property(c => c.InteresPagado).HasPrecision(12, 2);
         builder.Property(c => c.MoraPagada).HasPrecision(12, 2);
         builder.Property(c => c.Estado).HasConversion(EstadoConverters.Cuota).HasMaxLength(10).IsUnicode(false);
+        // Si otro usuario modificó la cuota desde que se leyó, SaveChanges lanza
+        // DbUpdateConcurrencyException y la API responde 409
+        builder.Property(c => c.RowVersion).IsRowVersion();
         // MontoCuota, TotalPagado y Pendiente se calculan en C#; no se mapean
     }
 }
@@ -70,5 +76,39 @@ public class HistorialEstadoPrestamoConfiguration : IEntityTypeConfiguration<His
         builder.Property(h => h.EstadoNuevo).HasConversion(EstadoConverters.Prestamo).HasMaxLength(12).IsUnicode(false);
         builder.Property(h => h.Fecha).HasColumnType("datetime2(0)");
         builder.Property(h => h.Comentario).HasMaxLength(300);
+    }
+}
+
+public class PagoConfiguration : IEntityTypeConfiguration<Pago>
+{
+    public void Configure(EntityTypeBuilder<Pago> builder)
+    {
+        builder.ToTable("Pagos");
+        builder.HasKey(p => p.Id);
+
+        builder.Property(p => p.FechaPago).HasColumnType("datetime2(0)");
+        builder.Property(p => p.Monto).HasPrecision(12, 2);
+        builder.Property(p => p.MedioPago).HasConversion(EstadoConverters.MedioDePago).HasMaxLength(15).IsUnicode(false);
+        builder.Property(p => p.NumeroOperacion).HasMaxLength(50).IsUnicode(false);
+        builder.Property(p => p.MotivoAnulacion).HasMaxLength(300);
+        builder.Property(p => p.FechaAnulacion).HasColumnType("datetime2(0)");
+
+        builder.HasMany(p => p.Detalles).WithOne().HasForeignKey(d => d.PagoId);
+        builder.Navigation(p => p.Detalles).UsePropertyAccessMode(PropertyAccessMode.Field);
+    }
+}
+
+public class PagoDetalleConfiguration : IEntityTypeConfiguration<PagoDetalle>
+{
+    public void Configure(EntityTypeBuilder<PagoDetalle> builder)
+    {
+        builder.ToTable("PagoDetalles");
+        builder.HasKey(d => d.Id);
+
+        builder.Property(d => d.MontoMora).HasPrecision(12, 2);
+        builder.Property(d => d.MontoInteres).HasPrecision(12, 2);
+        builder.Property(d => d.MontoCapital).HasPrecision(12, 2);
+
+        builder.HasOne(d => d.Cuota).WithMany().HasForeignKey(d => d.CuotaId);
     }
 }

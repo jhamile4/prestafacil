@@ -16,7 +16,11 @@ public class PrestamoRepository(PrestaFacilDbContext db) : IPrestamoRepository
             .AsQueryable();
 
         if (conDetalle)
-            query = query.Include(p => p.Cuotas).Include(p => p.Historial).AsSplitQuery();
+            query = query
+                .Include(p => p.Cuotas)
+                .Include(p => p.Historial)
+                .Include(p => p.Pagos).ThenInclude(pg => pg.Detalles)
+                .AsSplitQuery();
 
         return await query.FirstOrDefaultAsync(p => p.Id == id, ct);
     }
