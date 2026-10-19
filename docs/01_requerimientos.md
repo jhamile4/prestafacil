@@ -96,9 +96,10 @@ Una caja o financiera pequeña otorga **préstamos personales en soles** a traba
 | **RN-01** | El DNI tiene exactamente 8 dígitos y es único. El cliente debe ser mayor de 18 años. |
 | **RN-02** | Monto y plazo deben estar dentro de los límites del producto elegido. |
 | **RN-03** | La TEA y la tasa de mora se **copian** del producto al crear la solicitud. Si después cambian en el producto, los préstamos ya creados no se ven afectados. |
-| **RN-04** | **Capacidad de pago:** la cuota no puede superar el **40 %** del ingreso neto del cliente (ingreso − gastos). |
-| **RN-05** | Un cliente puede tener como máximo **2 préstamos activos** (desembolsados y no pagados). |
-| **RN-06** | No se aprueba un préstamo si el cliente tiene **cuotas vencidas** en otro préstamo. |
+| **RN-04** | **Capacidad de pago:** la suma de cuotas mensuales del cliente (préstamos aprobados o desembolsados + la nueva) no puede superar el **40 %** de su ingreso neto (ingreso − gastos). |
+| **RN-05** | Un cliente puede tener como máximo **2 préstamos activos**. Cuentan los aprobados y los desembolsados no pagados, porque un aprobado pronto se desembolsará. |
+| **RN-06** | No se aprueba un préstamo si el cliente tiene **cuotas vencidas** en otro préstamo. Se revisa por fecha de vencimiento, sin esperar al proceso diario de mora. |
+| **RN-13** | Quien registró la solicitud no puede aprobarla (segregación de funciones). La evaluación se repite al aprobar, porque la situación del cliente puede haber cambiado. |
 | **RN-07** | Solo se evalúan clientes activos. |
 | **RN-08** | **Mora:** por cada día de atraso se cobra `saldo vencido (capital + interés) × tasa de mora diaria`. La mora se recalcula cada día hasta que la cuota se paga. |
 | **RN-09** | **Orden de aplicación del pago:** primero la cuota más antigua y, dentro de cada cuota, primero la mora, luego el interés y al final el capital. |
@@ -123,7 +124,7 @@ Es el método que usan las cajas y bancos en Perú.
 5. La primera cuota vence un mes después del desembolso, y las siguientes el mismo día de cada mes.
 
 **Ejemplo (préstamo PR-000001 de los datos de prueba):** S/ 5,000 a 12 meses con TEA 35 %
-→ TEM = 2.5324 % → cuota = **S/ 488.39**. La cuota 12 sale S/ 488.41 por el ajuste de redondeo.
+→ TEM = 2.5324 % → cuota = **S/ 488.39**. La cuota 12 sale S/ 488.42 por el ajuste de redondeo.
 
 ### 4.2 Estados del préstamo
 

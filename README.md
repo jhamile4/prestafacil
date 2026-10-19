@@ -2,7 +2,7 @@
 
 Sistema de gestión de préstamos personales para cajas y financieras pequeñas. Cubre el ciclo completo del crédito: registro del cliente, evaluación de capacidad de pago, aprobación, desembolso, cronograma de cuotas (sistema francés), pagos, mora y reportes.
 
-> 🚧 **En desarrollo.** Terminado: base de datos y módulo de clientes. Siguiente: préstamos.
+> 🚧 **En desarrollo.** Terminado: base de datos, clientes y préstamos (simulador, evaluación, aprobación, desembolso y cronograma). Siguiente: pagos y mora.
 
 ## Stack
 
@@ -52,6 +52,17 @@ graph LR
 | PUT | `/api/clientes/{id}` | Actualizar cliente |
 | PATCH | `/api/clientes/{id}/desactivar` · `/activar` | Desactivar o reactivar (no se borra) |
 | GET | `/api/clientes/{id}/estado-cuenta` | Préstamos, cuotas por pagar y deuda total (`sp_EstadoCuentaCliente`) |
+| GET | `/api/productos` | Productos de préstamo con tasas y límites |
+| POST | `/api/prestamos/simular` | Cuota y cronograma sin guardar; con `clienteId` incluye la evaluación |
+| POST | `/api/prestamos` | Registrar solicitud |
+| GET | `/api/prestamos?estado=&clienteId=` | Listar préstamos |
+| GET | `/api/prestamos/{id}` | Detalle con historial de estados |
+| GET | `/api/prestamos/{id}/evaluacion` | Evaluación crediticia (RN-04 a RN-07) |
+| POST | `/api/prestamos/{id}/aprobar` · `/rechazar` | Aprobar (vuelve a evaluar) o rechazar con motivo |
+| POST | `/api/prestamos/{id}/desembolsar` | Desembolsar y generar el cronograma |
+| GET | `/api/prestamos/{id}/cronograma` | Cronograma con lo pagado y lo pendiente |
+
+> **Mientras no exista el login:** en desarrollo, la cabecera `X-Usuario-Id` (también disponible en Swagger) indica quién hace la operación: `1` admin, `2` asesor1, `3` asesor2, `4` cajero1. Por ejemplo, para aprobar se usa `1`. Se eliminará cuando se implemente JWT.
 
 Los errores siguen el estándar **ProblemDetails**: `400` para datos inválidos (con el detalle por campo), `404` si no existe, `409` para un DNI duplicado y `422` cuando no se cumple una regla de negocio.
 
@@ -98,7 +109,7 @@ dotnet test
 - [x] Requerimientos y reglas de negocio
 - [x] Modelo de datos, procedimientos almacenados y datos de prueba
 - [x] API base en capas y módulo de clientes
-- [ ] Préstamos: simulador, evaluación, cronograma
+- [x] Préstamos: simulador, evaluación, aprobación, desembolso y cronograma
 - [ ] Pagos y mora
 - [ ] Autenticación JWT y roles
 - [ ] Docker y CI (las pruebas unitarias se agregan en cada módulo)

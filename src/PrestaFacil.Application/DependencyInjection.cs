@@ -1,6 +1,8 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using PrestaFacil.Application.Clientes;
+using PrestaFacil.Application.Prestamos;
+using PrestaFacil.Application.Productos;
 
 namespace PrestaFacil.Application;
 
@@ -12,6 +14,8 @@ public static class DependencyInjection
         services.AddSingleton(TimeProvider.System);
 
         services.AddScoped<IClienteService, ClienteService>();
+        services.AddScoped<IProductoService, ProductoService>();
+        services.AddScoped<IPrestamoService, PrestamoService>();
 
         return services;
     }

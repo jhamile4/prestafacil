@@ -94,7 +94,9 @@ UPDATE p
 SET Tem = t.Tem,
     CuotaMensual = ROUND(p.Monto * t.Tem / (1 - POWER(1 + t.Tem, -CAST(p.PlazoMeses AS FLOAT))), 2)
 FROM Prestamos p
-CROSS APPLY (SELECT POWER(1 + CAST(p.Tea AS FLOAT), 1.0 / 12) - 1 AS Tem) t;
+-- 1.0E0 es FLOAT. Con "1.0 / 12" SQL Server hace división DECIMAL y la corta a 0.083333,
+-- lo que da una TEM ligeramente menor que la real.
+CROSS APPLY (SELECT POWER(1 + CAST(p.Tea AS FLOAT), 1.0E0 / 12) - 1 AS Tem) t;
 
 -- Historial de estados
 INSERT INTO HistorialEstadosPrestamo (PrestamoId, EstadoAnterior, EstadoNuevo, UsuarioId, Fecha, Comentario)

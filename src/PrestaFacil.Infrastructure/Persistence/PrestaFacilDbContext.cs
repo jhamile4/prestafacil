@@ -11,6 +11,8 @@ namespace PrestaFacil.Infrastructure.Persistence;
 public class PrestaFacilDbContext(DbContextOptions<PrestaFacilDbContext> options) : DbContext(options)
 {
     public DbSet<Cliente> Clientes => Set<Cliente>();
+    public DbSet<ProductoPrestamo> Productos => Set<ProductoPrestamo>();
+    public DbSet<Prestamo> Prestamos => Set<Prestamo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
