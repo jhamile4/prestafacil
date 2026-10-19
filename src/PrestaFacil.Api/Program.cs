@@ -14,6 +14,7 @@ using PrestaFacil.Application;
 using PrestaFacil.Application.Common;
 using PrestaFacil.Application.Usuarios;
 using PrestaFacil.Infrastructure;
+using PrestaFacil.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +81,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddSingleton<ITokenService, JwtTokenService>();
 builder.Services.AddHostedService<MoraDiariaJob>();
+// GET /health: la usan Docker y el CI para saber si la API y SQL Server responden
+builder.Services.AddHealthChecks().AddDbContextCheck<PrestaFacilDbContext>("sqlserver");
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -136,5 +139,6 @@ app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health").AllowAnonymous();
 
 app.Run();

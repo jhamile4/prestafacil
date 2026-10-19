@@ -1,0 +1,53 @@
+# Entorno de demostración local: SQL Server + base de datos inicial + API.
+# Uso: copiar .env.example a .env, completar los valores y ejecutar
+#   docker compose up -d --build
+# Swagger: http://localhost:8080/swagger
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD en .env}
+    ports:
+      - "14333:1433" # 14333 para no chocar con un SQL Server instalado en la PC
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  # Se ejecuta una vez: crea la base con los scripts de /database y termina
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+    volumes:
+      - ./database:/database:ro
+      - ./docker/init-db.sh:/init-db.sh:ro
+    entrypoint: ["/bin/bash", "/init-db.sh"]
+    restart: "no"
+
+  api:
+    build: .
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      # Development habilita Swagger y asigna la contraseña de demostración a los usuarios de prueba
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__PrestaFacil: "Server=db,1433;Database=PrestaFacilDB;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
+      Jwt__Key: ${JWT_KEY:?Defina JWT_KEY en .env}
+      Demo__PasswordInicial: ${DEMO_PASSWORD:?Defina DEMO_PASSWORD en .env}
+    ports:
+      - "8080:8080"
+
+volumes:
+  sqldata:

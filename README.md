@@ -1,8 +1,10 @@
 # PrestaFácil
 
+[![CI](https://github.com/jhamile4/prestafacil/actions/workflows/ci.yml/badge.svg)](https://github.com/jhamile4/prestafacil/actions/workflows/ci.yml)
+
 Sistema de gestión de préstamos personales para cajas y financieras pequeñas. Cubre el ciclo completo del crédito: registro del cliente, evaluación de capacidad de pago, aprobación, desembolso, cronograma de cuotas (sistema francés), pagos, mora y reportes.
 
-> 🚧 **En desarrollo.** Terminado: base de datos, clientes, préstamos, pagos, mora, reportes, autenticación JWT y roles. Siguiente: Docker y CI.
+> 🚧 **En desarrollo.** Terminado: API completa con Docker y CI. Siguiente: frontend en React y despliegue.
 
 ## Stack
 
@@ -11,7 +13,8 @@ Sistema de gestión de préstamos personales para cajas y financieras pequeñas.
 | Base de datos | SQL Server, procedimientos almacenados |
 | Backend | ASP.NET Core Web API (.NET 10), C#, Entity Framework Core, ADO.NET, FluentValidation |
 | Seguridad | JWT Bearer, autorización por roles (ADMIN, ASESOR, CAJERO), BCrypt, rate limiting |
-| Calidad | xUnit, Swagger/OpenAPI, ProblemDetails · Docker y GitHub Actions *(próximamente)* |
+| Calidad | xUnit, Swagger/OpenAPI, ProblemDetails, health checks |
+| DevOps | Docker (multi-stage, usuario sin privilegios), Docker Compose, GitHub Actions |
 | Frontend | React *(próximamente)* |
 
 ## Documentación
@@ -87,7 +90,38 @@ Todos los endpoints, salvo el login, requieren token. Qué rol puede hacer cada 
 
 Los errores siguen el estándar **ProblemDetails**: `400` para datos inválidos (con el detalle por campo), `404` si no existe, `409` para un DNI duplicado o dos cobros simultáneos al mismo préstamo y `422` cuando no se cumple una regla de negocio.
 
-## Crear la base de datos
+## Levantar todo con Docker (recomendado)
+
+Solo necesitas Docker. Compose levanta SQL Server, crea la base con los scripts de `/database` y arranca la API.
+
+```bash
+cp .env.example .env
+```
+
+Completa `.env` con una contraseña para SQL Server, una clave JWT (32+ caracteres) y la contraseña que tendrán los usuarios de prueba. Luego:
+
+```bash
+docker compose up -d --build
+```
+
+- Swagger: http://localhost:8080/swagger (inicia sesión con `admin` y la `DEMO_PASSWORD` de tu `.env`)
+- Estado: http://localhost:8080/health
+- SQL Server desde SSMS: servidor `localhost,14333`, usuario `sa`
+
+Prueba de humo (login, permisos por rol y procedimientos almacenados):
+
+```bash
+DEMO_PASSWORD=<la de tu .env> bash docker/smoke-test.sh
+```
+
+## Integración continua
+
+En cada push y pull request, GitHub Actions ejecuta dos jobs:
+
+1. **Compilar y pruebas unitarias**: compila en Release con las advertencias tratadas como errores, revisa paquetes NuGet con vulnerabilidades conocidas y corre las pruebas xUnit con cobertura.
+2. **Docker y prueba de humo**: construye la imagen, levanta SQL Server con Docker Compose usando secretos aleatorios de un solo uso y ejecuta `docker/smoke-test.sh` contra la API real.
+
+## Crear la base de datos (sin Docker)
 
 Requisito: SQL Server (Express funciona). Ejecuta los scripts en orden, ya sea en SSMS o con `sqlcmd`:
 
@@ -138,7 +172,7 @@ dotnet test
 - [x] Préstamos: simulador, evaluación, aprobación, desembolso y cronograma
 - [x] Pagos, mora (proceso diario en segundo plano), anulaciones y reportes
 - [x] Autenticación JWT, roles, gestión de usuarios y límite de intentos de login
-- [ ] Docker y CI (las pruebas unitarias se agregan en cada módulo)
+- [x] Docker, Docker Compose y GitHub Actions (build, pruebas, vulnerabilidades y prueba de humo)
 - [ ] Frontend en React y despliegue
 
 ## Autora
