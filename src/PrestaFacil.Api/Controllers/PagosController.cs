@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrestaFacil.Api.Security;
 using PrestaFacil.Application.Pagos;
 
 namespace PrestaFacil.Api.Controllers;
@@ -7,6 +9,8 @@ namespace PrestaFacil.Api.Controllers;
 [ApiController]
 [Route("api/prestamos/{prestamoId:int}")]
 [Produces("application/json")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status403Forbidden)]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
 public class PagosController(IPagoService pagos) : ControllerBase
@@ -26,6 +30,7 @@ public class PagosController(IPagoService pagos) : ControllerBase
     /// <summary>Registra un pago y lo aplica: cuota más antigua primero; mora, interés y capital (RN-09).</summary>
     /// <remarks>`medioPago`: Efectivo, Transferencia, Yape o Plin. Los digitales requieren `numeroOperacion`.</remarks>
     [HttpPost("pagos")]
+    [Authorize(Roles = Permisos.AdminCajero)]
     [ProducesResponseType<PagoRegistradoResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
@@ -38,6 +43,7 @@ public class PagosController(IPagoService pagos) : ControllerBase
 
     /// <summary>Anula el último pago válido y revierte sus abonos (RN-11).</summary>
     [HttpPost("pagos/{pagoId:int}/anular")]
+    [Authorize(Roles = Permisos.Admin)]
     [ProducesResponseType<PagoResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]

@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrestaFacil.Api.Security;
 using PrestaFacil.Application.Clientes;
 using PrestaFacil.Application.Common;
 
@@ -8,6 +10,8 @@ namespace PrestaFacil.Api.Controllers;
 [ApiController]
 [Route("api/clientes")]
 [Produces("application/json")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status403Forbidden)]
 public class ClientesController(IClienteService clientes) : ControllerBase
 {
     /// <summary>Busca clientes por DNI o por nombre, con paginación.</summary>
@@ -36,6 +40,7 @@ public class ClientesController(IClienteService clientes) : ControllerBase
 
     /// <summary>Registra un nuevo cliente.</summary>
     [HttpPost]
+    [Authorize(Roles = Permisos.AdminAsesor)]
     [ProducesResponseType<ClienteResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
@@ -48,6 +53,7 @@ public class ClientesController(IClienteService clientes) : ControllerBase
 
     /// <summary>Actualiza los datos de un cliente. El DNI no se puede cambiar.</summary>
     [HttpPut("{id:int}")]
+    [Authorize(Roles = Permisos.AdminAsesor)]
     [ProducesResponseType<ClienteResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -57,6 +63,7 @@ public class ClientesController(IClienteService clientes) : ControllerBase
 
     /// <summary>Desactiva un cliente. No se elimina para conservar su historial (RN-11).</summary>
     [HttpPatch("{id:int}/desactivar")]
+    [Authorize(Roles = Permisos.AdminAsesor)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Desactivar(int id, CancellationToken ct)
@@ -67,6 +74,7 @@ public class ClientesController(IClienteService clientes) : ControllerBase
 
     /// <summary>Vuelve a activar un cliente desactivado.</summary>
     [HttpPatch("{id:int}/activar")]
+    [Authorize(Roles = Permisos.AdminAsesor)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Activar(int id, CancellationToken ct)

@@ -20,4 +20,8 @@ internal static class EstadoConverters
     public static readonly ValueConverter<MedioPago, string> MedioDePago = new(
         v => v.ToString().ToUpperInvariant(),
         v => Enum.Parse<MedioPago>(v, true));
+
+    public static readonly ValueConverter<RolUsuario, string> Rol = new(
+        v => v.ToString().ToUpperInvariant(),
+        v => Enum.Parse<RolUsuario>(v, true));
 }

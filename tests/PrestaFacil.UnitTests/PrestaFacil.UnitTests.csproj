@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\PrestaFacil.Domain\PrestaFacil.Domain.csproj" />
     <ProjectReference Include="..\..\src\PrestaFacil.Application\PrestaFacil.Application.csproj" />
+    <ProjectReference Include="..\..\src\PrestaFacil.Api\PrestaFacil.Api.csproj" />
   </ItemGroup>
 
 </Project>

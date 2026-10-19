@@ -34,6 +34,23 @@ Una caja o financiera pequeña otorga **préstamos personales en soles** a traba
 
 > Un asesor **no puede aprobar** sus propias solicitudes: la aprobación es del ADMIN (segregación de funciones).
 
+### 2.1 Matriz de permisos
+
+| Operación | ADMIN | ASESOR | CAJERO |
+|---|:-:|:-:|:-:|
+| Consultar clientes, préstamos, cronogramas, deuda y pagos | ✅ | ✅ | ✅ |
+| Registrar y editar clientes | ✅ | ✅ | ❌ |
+| Simular y registrar solicitudes | ✅ | ✅ | ❌ |
+| Aprobar y rechazar solicitudes | ✅ | ❌ | ❌ |
+| Desembolsar | ✅ | ❌ | ✅ |
+| Registrar pagos | ✅ | ❌ | ✅ |
+| Anular pagos | ✅ | ❌ | ❌ |
+| Reporte de morosos | ✅ | ✅ | ❌ |
+| Reportes de cartera y cobranza, proceso de mora | ✅ | ❌ | ❌ |
+| Gestionar usuarios | ✅ | ❌ | ❌ |
+
+Si el ADMIN desactiva a un usuario o le cambia el rol, el cambio rige desde la siguiente petición: el token anterior deja de funcionar.
+
 ---
 
 ## 3. Requerimientos funcionales
@@ -147,7 +164,7 @@ Estados de la **cuota**: `PENDIENTE` → `PARCIAL` (pago incompleto) → `PAGADA
 
 | ID | Tipo | Requerimiento |
 |---|---|---|
-| RNF-01 | Seguridad | Contraseñas guardadas con hash (BCrypt), autenticación JWT y autorización por roles. |
+| RNF-01 | Seguridad | Contraseñas con hash BCrypt y política de complejidad (8+ caracteres, mayúscula, minúscula y número), autenticación JWT de 60 minutos, autorización por roles, máximo 5 intentos de login por minuto por IP y mensajes de error de login que no revelan si el usuario existe. |
 | RNF-02 | Integridad | Montos con `DECIMAL`, nunca con `FLOAT`. El registro de un pago es una transacción: o se guarda todo o nada. Si dos cajeros cobran el mismo préstamo a la vez, el segundo recibe un conflicto (control de concurrencia con `ROWVERSION`). |
 | RNF-03 | Arquitectura | API REST en capas (Domain, Application, Infrastructure, API). |
 | RNF-04 | Calidad | Pruebas unitarias con xUnit para el cálculo de cuotas, la evaluación y la aplicación de pagos. |

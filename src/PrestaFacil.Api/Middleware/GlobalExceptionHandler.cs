@@ -27,6 +27,7 @@ public class GlobalExceptionHandler(
                 Status = StatusCodes.Status400BadRequest,
                 Title = "Hay datos inválidos en la petición."
             },
+            UnauthorizedException => Crear(StatusCodes.Status401Unauthorized, "No autorizado", exception.Message),
             NotFoundException => Crear(StatusCodes.Status404NotFound, "Recurso no encontrado", exception.Message),
             ConflictException => Crear(StatusCodes.Status409Conflict, "Conflicto con datos existentes", exception.Message),
             DbUpdateConcurrencyException => Crear(StatusCodes.Status409Conflict, "Conflicto de concurrencia",

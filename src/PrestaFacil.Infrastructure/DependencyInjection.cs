@@ -5,9 +5,11 @@ using PrestaFacil.Application.Clientes;
 using PrestaFacil.Application.Prestamos;
 using PrestaFacil.Application.Productos;
 using PrestaFacil.Application.Reportes;
+using PrestaFacil.Application.Usuarios;
 using PrestaFacil.Infrastructure.Persistence;
 using PrestaFacil.Infrastructure.Queries;
 using PrestaFacil.Infrastructure.Repositories;
+using PrestaFacil.Infrastructure.Security;
 
 namespace PrestaFacil.Infrastructure;
 
@@ -25,6 +27,8 @@ public static class DependencyInjection
         services.AddScoped<IPrestamoRepository, PrestamoRepository>();
         services.AddScoped<IProductoRepository, ProductoRepository>();
         services.AddScoped<IReporteQueries, ReporteQueries>();
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
 
         return services;
     }

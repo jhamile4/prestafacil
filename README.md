@@ -2,7 +2,7 @@
 
 Sistema de gestión de préstamos personales para cajas y financieras pequeñas. Cubre el ciclo completo del crédito: registro del cliente, evaluación de capacidad de pago, aprobación, desembolso, cronograma de cuotas (sistema francés), pagos, mora y reportes.
 
-> 🚧 **En desarrollo.** Terminado: base de datos, clientes, préstamos, pagos, mora y reportes. Siguiente: autenticación JWT y roles.
+> 🚧 **En desarrollo.** Terminado: base de datos, clientes, préstamos, pagos, mora, reportes, autenticación JWT y roles. Siguiente: Docker y CI.
 
 ## Stack
 
@@ -10,7 +10,7 @@ Sistema de gestión de préstamos personales para cajas y financieras pequeñas.
 |---|---|
 | Base de datos | SQL Server, procedimientos almacenados |
 | Backend | ASP.NET Core Web API (.NET 10), C#, Entity Framework Core, ADO.NET, FluentValidation |
-| Seguridad | JWT, roles (ADMIN, ASESOR, CAJERO), BCrypt *(próximamente)* |
+| Seguridad | JWT Bearer, autorización por roles (ADMIN, ASESOR, CAJERO), BCrypt, rate limiting |
 | Calidad | xUnit, Swagger/OpenAPI, ProblemDetails · Docker y GitHub Actions *(próximamente)* |
 | Frontend | React *(próximamente)* |
 
@@ -70,7 +70,20 @@ graph LR
 | GET | `/api/reportes/cobranza?desde=&hasta=` | Cobranza por cajero y medio de pago (`sp_ReporteCobranza`) |
 | POST | `/api/mora/procesar` | Ejecutar ahora el proceso de mora (también corre solo cada 24 h) |
 
-> **Mientras no exista el login:** en desarrollo, la cabecera `X-Usuario-Id` (también disponible en Swagger) indica quién hace la operación: `1` admin, `2` asesor1, `3` asesor2, `4` cajero1. Por ejemplo, para aprobar se usa `1`. Se eliminará cuando se implemente JWT.
+| POST | `/api/auth/login` | Iniciar sesión: devuelve el token JWT (máx. 5 intentos por minuto) |
+| GET | `/api/auth/yo` · POST `/api/auth/cambiar-password` | Usuario actual y cambio de contraseña |
+| GET · POST · PUT | `/api/usuarios` | Gestión de usuarios (solo ADMIN): crear, editar, desactivar, restablecer contraseña |
+
+Todos los endpoints, salvo el login, requieren token. Qué rol puede hacer cada operación está en la [matriz de permisos](docs/01_requerimientos.md#21-matriz-de-permisos).
+
+## Seguridad
+
+- **JWT Bearer** firmado con HMAC-SHA256 y válido por 60 minutos. En cada petición se revisa que el usuario siga activo y con el mismo rol, así que desactivar a alguien tiene efecto inmediato.
+- **Roles** con `[Authorize(Roles = ...)]` en cada endpoint. Una política global exige sesión en todo lo que no esté marcado como público.
+- **Contraseñas** con hash **BCrypt**; política de complejidad con FluentValidation.
+- **Login**: máximo 5 intentos por minuto por IP (rate limiting de ASP.NET Core). El mismo mensaje para usuario inexistente o contraseña incorrecta, con el mismo tiempo de respuesta.
+- **Segregación de funciones**: quien registra una solicitud no puede aprobarla.
+- **Secretos**: la clave JWT de `appsettings.Development.json` sirve **solo para desarrollo**. En producción se pasa por la variable de entorno `Jwt__Key`, y la API no arranca si falta o tiene menos de 32 caracteres.
 
 Los errores siguen el estándar **ProblemDetails**: `400` para datos inválidos (con el detalle por campo), `404` si no existe, `409` para un DNI duplicado o dos cobros simultáneos al mismo préstamo y `422` cuando no se cumple una regla de negocio.
 
@@ -106,6 +119,11 @@ dotnet run --project src/PrestaFacil.Api --launch-profile http
 
 Abre http://localhost:5039/swagger. En Visual Studio, abre `PrestaFacil.slnx` y presiona F5.
 
+**Iniciar sesión en Swagger:**
+1. En `POST /api/auth/login` usa uno de los usuarios de prueba (`admin`, `asesor1`, `asesor2`, `cajero1`). La contraseña de desarrollo está en `Demo:PasswordInicial` de `appsettings.Development.json`: al iniciar, la API se la asigna a los usuarios creados por `03_seed.sql`.
+2. Copia el `token` de la respuesta.
+3. Pulsa **Authorize** (arriba a la derecha), pégalo y confirma. Swagger lo recuerda aunque recargues la página.
+
 ## Pruebas
 
 ```bash
@@ -119,7 +137,7 @@ dotnet test
 - [x] API base en capas y módulo de clientes
 - [x] Préstamos: simulador, evaluación, aprobación, desembolso y cronograma
 - [x] Pagos, mora (proceso diario en segundo plano), anulaciones y reportes
-- [ ] Autenticación JWT y roles
+- [x] Autenticación JWT, roles, gestión de usuarios y límite de intentos de login
 - [ ] Docker y CI (las pruebas unitarias se agregan en cada módulo)
 - [ ] Frontend en React y despliegue
 

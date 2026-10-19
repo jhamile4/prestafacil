@@ -18,7 +18,8 @@ DECLARE @Hoy DATE = CAST(GETDATE() AS DATE);
 
 /* -------------------------------------------------------------
    Usuarios
-   PasswordHash es temporal: la API reemplazará estos valores por
+   PasswordHash es temporal: SQL Server no calcula BCrypt. Al iniciar en
+   modo desarrollo, la API (DatosDemoSeeder) reemplaza estos valores por
    hashes BCrypt reales al iniciar en modo desarrollo.
    ------------------------------------------------------------- */
 SET IDENTITY_INSERT Usuarios ON;

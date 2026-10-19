@@ -10,6 +10,7 @@ namespace PrestaFacil.Infrastructure.Persistence;
 /// </summary>
 public class PrestaFacilDbContext(DbContextOptions<PrestaFacilDbContext> options) : DbContext(options)
 {
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<ProductoPrestamo> Productos => Set<ProductoPrestamo>();
     public DbSet<Prestamo> Prestamos => Set<Prestamo>();

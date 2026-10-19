@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrestaFacil.Api.Security;
 using PrestaFacil.Application.Common;
 using PrestaFacil.Application.Prestamos;
 
@@ -8,6 +10,8 @@ namespace PrestaFacil.Api.Controllers;
 [ApiController]
 [Route("api/prestamos")]
 [Produces("application/json")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status403Forbidden)]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)]
 public class PrestamosController(IPrestamoService prestamos) : ControllerBase
@@ -15,6 +19,7 @@ public class PrestamosController(IPrestamoService prestamos) : ControllerBase
     /// <summary>Simula cuota y cronograma sin guardar nada (RF-07).</summary>
     /// <remarks>Si se envía `clienteId`, incluye la evaluación crediticia del cliente.</remarks>
     [HttpPost("simular")]
+    [Authorize(Roles = Permisos.AdminAsesor)]
     [ProducesResponseType<SimulacionResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public Task<SimulacionResponse> Simular(SimularPrestamoRequest request, CancellationToken ct) =>
@@ -22,6 +27,7 @@ public class PrestamosController(IPrestamoService prestamos) : ControllerBase
 
     /// <summary>Registra una solicitud de préstamo (RF-06) y devuelve su evaluación (RF-08).</summary>
     [HttpPost]
+    [Authorize(Roles = Permisos.AdminAsesor)]
     [ProducesResponseType<PrestamoDetalleResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PrestamoDetalleResponse>> Solicitar(SolicitarPrestamoRequest request, CancellationToken ct)
@@ -51,12 +57,14 @@ public class PrestamosController(IPrestamoService prestamos) : ControllerBase
 
     /// <summary>Aprueba la solicitud (RF-09). Vuelve a evaluar antes de aprobar.</summary>
     [HttpPost("{id:int}/aprobar")]
+    [Authorize(Roles = Permisos.Admin)]
     [ProducesResponseType<PrestamoDetalleResponse>(StatusCodes.Status200OK)]
     public Task<PrestamoDetalleResponse> Aprobar(int id, AprobarPrestamoRequest request, CancellationToken ct) =>
         prestamos.AprobarAsync(id, request, ct);
 
     /// <summary>Rechaza la solicitud indicando el motivo (RF-09).</summary>
     [HttpPost("{id:int}/rechazar")]
+    [Authorize(Roles = Permisos.Admin)]
     [ProducesResponseType<PrestamoDetalleResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public Task<PrestamoDetalleResponse> Rechazar(int id, RechazarPrestamoRequest request, CancellationToken ct) =>
@@ -64,6 +72,7 @@ public class PrestamosController(IPrestamoService prestamos) : ControllerBase
 
     /// <summary>Desembolsa un préstamo aprobado y genera su cronograma (RF-10).</summary>
     [HttpPost("{id:int}/desembolsar")]
+    [Authorize(Roles = Permisos.AdminCajero)]
     [ProducesResponseType<CronogramaResponse>(StatusCodes.Status200OK)]
     public Task<CronogramaResponse> Desembolsar(int id, DesembolsarPrestamoRequest request, CancellationToken ct) =>
         prestamos.DesembolsarAsync(id, request, ct);
