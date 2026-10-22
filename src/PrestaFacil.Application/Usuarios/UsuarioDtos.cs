@@ -37,6 +37,9 @@ public record UsuarioResponse(
 
 public record LoginResponse(string Token, string TipoToken, DateTime ExpiraEn, UsuarioResponse Usuario);
 
+/// <summary>Datos mínimos para mostrar quién hizo cada operación, sin correo ni estado.</summary>
+public record UsuarioDirectorioResponse(int Id, string NombreCompleto, RolUsuario Rol);
+
 // ---------- Validaciones ----------
 
 /// <summary>Política de contraseñas: mínimo 8 caracteres, con mayúscula, minúscula y número.</summary>

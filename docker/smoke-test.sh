@@ -60,6 +60,17 @@ verificar "Deuda de PR-000002 con mora"          200 GET  /prestamos/2/deuda "$C
 verificar "Cajero no puede aprobar"              403 POST /prestamos/5/aprobar "$CAJERO"
 verificar "No se aprueba dos veces (PR-000006)"  422 POST /prestamos/6/aprobar "$ADMIN"
 
+# Frontend (opcional): nginx sirve la app y redirige /api a la API
+if [ -n "${WEB_URL:-}" ]; then
+  echo "Frontend en $WEB_URL"
+  for ruta in / /clientes /prestamos/2; do
+    codigo=$(curl -s -o /dev/null -w '%{http_code}' "$WEB_URL$ruta")
+    if [ "$codigo" = "200" ]; then echo "  OK    $ruta sirve la app ($codigo)"; else echo "  FALLO $ruta respondió $codigo"; FALLOS=$((FALLOS + 1)); fi
+  done
+  token_web=$(curl -s -X POST "$WEB_URL/api/auth/login" -H "Content-Type: application/json"     -d "{\"nombreUsuario\":\"admin\",\"password\":\"$DEMO_PASSWORD\"}" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+  if [ -n "$token_web" ]; then echo "  OK    login a través del proxy de nginx"; else echo "  FALLO login a través del proxy de nginx"; FALLOS=$((FALLOS + 1)); fi
+fi
+
 if [ "$FALLOS" -gt 0 ]; then
   echo "$FALLOS verificación(es) fallaron."
   exit 1

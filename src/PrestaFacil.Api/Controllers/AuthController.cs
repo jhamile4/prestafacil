@@ -33,6 +33,13 @@ public class AuthController(IAuthService auth) : ControllerBase
     public Task<UsuarioResponse> Yo(CancellationToken ct) =>
         auth.ObtenerUsuarioActualAsync(ct);
 
+    /// <summary>Nombre y rol de cada usuario, para mostrar quién realizó cada operación.</summary>
+    [HttpGet("directorio")]
+    [ProducesResponseType<IReadOnlyList<UsuarioDirectorioResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public Task<IReadOnlyList<UsuarioDirectorioResponse>> Directorio(CancellationToken ct) =>
+        auth.DirectorioAsync(ct);
+
     /// <summary>Cambia la contraseña del usuario autenticado.</summary>
     [HttpPost("cambiar-password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

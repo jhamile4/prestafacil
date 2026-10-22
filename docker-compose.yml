@@ -1,7 +1,7 @@
-# Entorno de demostración local: SQL Server + base de datos inicial + API.
+# Entorno de demostración local: SQL Server + base de datos inicial + API + frontend.
 # Uso: copiar .env.example a .env, completar los valores y ejecutar
 #   docker compose up -d --build
-# Swagger: http://localhost:8080/swagger
+# Aplicación: http://localhost:3000   ·   Swagger: http://localhost:8080/swagger
 
 services:
   db:
@@ -48,6 +48,14 @@ services:
       Demo__PasswordInicial: ${DEMO_PASSWORD:?Defina DEMO_PASSWORD en .env}
     ports:
       - "8080:8080"
+
+  # React compilado y servido por nginx, que además redirige /api al contenedor de la API
+  web:
+    build: ./frontend
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
 
 volumes:
   sqldata:

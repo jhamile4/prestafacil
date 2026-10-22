@@ -8,6 +8,7 @@ public interface IAuthService
     Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken ct = default);
     Task<UsuarioResponse> ObtenerUsuarioActualAsync(CancellationToken ct = default);
     Task CambiarPasswordAsync(CambiarPasswordRequest request, CancellationToken ct = default);
+    Task<IReadOnlyList<UsuarioDirectorioResponse>> DirectorioAsync(CancellationToken ct = default);
 }
 
 /// <summary>RF-19: inicio de sesión con usuario y contraseña; devuelve un JWT.</summary>
@@ -57,6 +58,11 @@ public class AuthService(
         usuario.CambiarPasswordHash(hasher.Hash(request.PasswordNueva));
         await usuarios.GuardarCambiosAsync(ct);
     }
+
+    public async Task<IReadOnlyList<UsuarioDirectorioResponse>> DirectorioAsync(CancellationToken ct = default) =>
+        (await usuarios.ListarAsync(ct))
+            .Select(u => new UsuarioDirectorioResponse(u.Id, u.NombreCompleto, u.Rol))
+            .ToList();
 
     private async Task<Domain.Entities.Usuario> ObtenerActualAsync(CancellationToken ct) =>
         await usuarios.ObtenerPorIdAsync(usuarioActual.UserId, ct)

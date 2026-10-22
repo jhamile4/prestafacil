@@ -88,6 +88,15 @@ public class AuthServiceTests
         Assert.Equal(FakePasswordHasher.HashDe("Nueva2026!"), _cajero.PasswordHash);
     }
 
+    [Fact]
+    public async Task Directorio_DevuelveNombreYRolSinDatosSensibles()
+    {
+        var directorio = await Servicio().DirectorioAsync();
+
+        var cajero = Assert.Single(directorio);
+        Assert.Equal((_cajero.Id, _cajero.NombreCompleto, RolUsuario.Cajero), (cajero.Id, cajero.NombreCompleto, cajero.Rol));
+    }
+
     [Theory]
     [InlineData("corta1A")]       // menos de 8
     [InlineData("sinnumeroA")]    // sin número
